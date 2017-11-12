@@ -1,0 +1,48 @@
+version: "2.1"
+
+services:
+    php:
+        build: ./php/
+        ports:
+            - 80:80
+        volumes:
+            - "${PROJECT_ROOT}:/var/www/html"
+        networks:
+            - web
+            - database
+        depends_on:
+            - mysql
+        env_file:
+            - ./.env
+
+    mysql:
+        image: mysql:latest
+        volumes:
+            - "./mysql:/docker-entrypoint-initdb.d"
+            - "data:/var/lib/mysql:rw"
+        networks:
+            - database
+        env_file:
+            - ./.env
+
+    lb:
+        image: dockercloud/haproxy
+        links:
+            - php
+        environment:
+            - DOCKER_TLS_VERIFY
+            - DOCKER_HOST
+            - DOCKER_CERT_PATH
+        volumes:
+            - $DOCKER_CERT_PATH:$DOCKER_CERT_PATH
+        ports:
+            - 81:80
+        networks:
+            - web
+
+volumes:
+    data:
+
+networks:
+    database:
+    web:
